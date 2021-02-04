@@ -1,6 +1,10 @@
 pipeline {
     
     agent any
+    tools
+    {
+        jdk "java8"
+    }
     
     environment {
         // This can be nexus3 or nexus2 server
