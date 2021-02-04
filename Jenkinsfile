@@ -1,12 +1,6 @@
-#!/usr/bin/groovy
-
 pipeline {
-    agent {
-        docker {
-            image 'azagramac/maven'
-            args '-v /root/.m2:/root/.m2'
-        }
-    }
+    
+    agent any
     
     environment {
         // This can be nexus3 or nexus2 server
@@ -14,23 +8,23 @@ pipeline {
         // This can be http or https
         NEXUS_PROTOCOL = "http"
         // Where your Nexus is running
-        NEXUS_URL = "10.22.21.138:8081"
+        NEXUS_URL = "localhost:8081"
         // Repository where we will upload the artifact
-        NEXUS_REPOSITORY_RELEASES = "maven-releases"
-        NEXUS_REPOSITORY_SNAPSHOTS = "maven-snapshots"
+        NEXUS_REPOSITORY_RELEASES = "Jenkins_201"
+        NEXUS_REPOSITORY_SNAPSHOTS = "Jenkins_201"
         // Jenkins credential id to authenticate to Nexus OSS
-        NEXUS_CREDENTIAL_ID = "899bfb86-db46-3333-939e-464185476a57"
+        NEXUS_CREDENTIAL_ID = "IdPass"
     }
     
     stages {
         stage('Build') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                bat 'mvn -B -DskipTests clean package'
             }
         }
         stage('Test') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
             post {
                 always {
@@ -38,11 +32,10 @@ pipeline {
                 }
             }
         }
-        
         stage('SonarQube Analytics') {
             steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar'
+                withSonarQubeEnv('SonarQube') {
+                    bat 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.8.0.2131:sonar'
                 }
             }
         }
@@ -56,7 +49,7 @@ pipeline {
                     artifactPath = filesByGlob[0].path;
                     artifactExists = fileExists artifactPath;
                     if(artifactExists) {
-                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}";
+                        echo "* File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}";
                         nexusArtifactUploader(
                                 nexusVersion: NEXUS_VERSION,
                                 protocol: NEXUS_PROTOCOL,
@@ -76,7 +69,7 @@ pipeline {
                                      type: "pom"]]);
                       
                     } else {
-                        error "*** File: ${artifactPath}, could not be found";
+                        error "* File: ${artifactPath}, could not be found";
                     }
                 }
             }
